@@ -1,0 +1,95 @@
+#!/bin/sh
+
+## Get instance IP
+INSTANCE_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
+
+## Install repos
+curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+
+
+## Install Packages
+apt update && apt install -y unzip docker.io nomad consul dnsmasq dnsperf
+
+## Consul
+
+cat <<EOT >> /etc/consul.d/config.hcl
+node_name = "monitoring"
+data_dir = "/opt/consul"
+log_level = "INFO"
+server = false
+advertise_addr = "$${INSTANCE_IP}"
+client_addr = "0.0.0.0"
+ui = true
+ports {
+  serf_wan = -1
+  grpc = 8502
+}
+
+retry_join = [ "provider=aws tag_key=consul tag_value=server" ]
+
+dns_config {
+    allow_stale = true
+    node_ttl = "30s"
+    service_ttl {
+	    "*" = "30s"
+    }
+    use_cache = true
+    cache_max_age = "2s"
+}
+
+telemetry {
+  prometheus_retention_time = "10m"
+  disable_hostname = true
+}
+EOT
+
+
+## Nomad
+rm /etc/nomad.d/nomad.hcl
+cat <<EOT >> /etc/nomad.d/nomad.hcl
+data_dir  = "/var/lib/nomad"
+bind_addr = "0.0.0.0"
+
+client {
+  enabled = true
+  node_class = "monitoring" 
+}
+
+plugin "docker" {
+  config {
+    allow_privileged = true
+    volumes {
+      enabled = true
+    }
+  }
+}
+
+telemetry {
+  prometheus_metrics = true
+}
+EOT
+
+# Configure DNSMASQ
+echo "server=/consul/127.0.0.1#8600" > /etc/dnsmasq.d/10-consul
+
+cat <<EOT >> /etc/dnsmasq.conf
+port=5353
+cache-size=500
+EOT
+
+# Configure systemd-resolved
+mkdir -p /etc/systemd/resolved.conf.d
+cat <<EOT >> /etc/systemd/resolved.conf.d/consul.conf
+[Resolve]
+DNS=127.0.0.1:8600
+DNSSEC=false
+Domains=~consul
+EOT
+
+# echo "dnsperf -p 8600 -d /root/dnsperf.datafile -c 100 -n 1000000" > DNS_TEST_README
+
+systemctl daemon-reload
+systemctl restart systemd-resolved
+systemctl enable consul --now
+systemctl enable nomad --now

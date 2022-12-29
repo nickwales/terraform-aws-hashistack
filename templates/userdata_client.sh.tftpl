@@ -1,0 +1,111 @@
+#!/bin/sh
+
+## Get instance IP
+INSTANCE_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
+
+## Install repos
+curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+
+
+## Install Packages
+apt update && apt install -y unzip consul docker.io nomad dnsperf jq dnsmasq
+#software-properties-common glusterfs-server glusterfs-client xfsprogs ntp
+
+## Shared drive
+
+#rm /etc/consul.d/consul.hcl
+
+cat <<EOT >> /etc/consul.d/config.hcl
+data_dir = "/opt/consul"
+log_level = "INFO"
+server = false
+advertise_addr = "$${INSTANCE_IP}"
+client_addr = "0.0.0.0"
+ui = true
+ports {
+  serf_wan = -1
+  grpc = 8502
+}
+
+retry_join = [ "provider=aws tag_key=consul tag_value=server" ]
+
+dns_config {
+    allow_stale = true
+    node_ttl = "2s"
+    service_ttl {
+	    "*" = "2s"
+    }
+    use_cache = true
+    cache_max_age = "2s"
+}
+
+telemetry {
+  prometheus_retention_time = "10m"
+  disable_hostname = true
+}
+EOT
+
+rm /etc/nomad.d/nomad.hcl
+cat <<EOT >> /etc/nomad.d/nomad.hcl
+data_dir  = "/opt/nomad/data"
+bind_addr = "0.0.0.0"
+
+client {
+  enabled = true
+  node_class = "default"
+}
+
+telemetry {
+  prometheus_metrics = true
+}
+
+plugin "docker" {
+  config {
+    allow_privileged = true
+    volumes {
+      enabled = true
+    }
+  }
+}
+EOT
+
+# Configure systemd-resolved
+mkdir -p /etc/systemd/resolved.conf.d
+cat <<EOT >> /etc/systemd/resolved.conf.d/consul.conf
+[Resolve]
+DNS=127.0.0.1:8600
+DNSSEC=false
+Domains=~consul
+EOT
+
+### Setup some testing
+
+echo "consul.service.consul A" > /root/dnsperf.datafile
+echo "$(hostname).node.consul A" >> /root/dnsperf.datafile
+
+echo "dnsperf -p 8600 -d /root/dnsperf.datafile -c 100 -n 1000000" > DNS_TEST_README
+
+# Configure DNSMASQ
+echo "server=/consul/127.0.0.1#8600" > /etc/dnsmasq.d/10-consul
+
+cat <<EOT >> /etc/dnsmasq.conf
+port=5353
+cache-size=500
+max-cache-ttl=2
+EOT
+
+systemctl daemon-reload
+systemctl enable consul --now
+systemctl enable nomad --now
+systemctl restart dnsmasq 
+systemctl enable dnsmasq
+systemctl restart systemd-resolved
+
+cat <<EOT >> /root/dnsperf_commands
+## Using dnsmasq
+dnsperf -p 5353 -d /root/dnsperf.datafile -c 100 -n 1000000
+
+## Using Consul DNS
+dnsperf -p 8600 -d /root/dnsperf.datafile -c 100 -n 1000000
+EOT

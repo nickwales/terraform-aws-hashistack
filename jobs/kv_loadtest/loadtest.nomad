@@ -14,57 +14,6 @@ job "loadtest" {
       value = "default"
   }
 
-  group "loadtest" {
-    count = 0
-
-    task "loadtest" {
-      driver = "docker"
-
-      config {
-        image   = "nickwales/npm-loadtest:0.0.2"
-        command = "loadtest"
-        args    = [
-            "-c", "10",
-            "--rps", "5000",
-            "-n", "1000000",
-            "http://${attr.unique.network.ip-address}:8500/v1/kv/loadtest/1"
-        ]
-      }
-
-
-      resources {
-        cpu    = 200
-        memory = 512
-      }
-    }
-  }
-
-  group "stale_loadtest" {
-    count = 0
-
-    task "loadtest" {
-      driver = "docker"
-
-      config {
-        image   = "nickwales/npm-loadtest:0.0.2"
-        command = "loadtest"
-        args    = [
-            "-c", "10",
-            "--rps", "5000",
-            "-n", "100000",
-            "-N", "localhost",
-            "http://${attr.unique.network.ip-address}:8500/v1/kv/loadtest/1?stale=true"
-        ]
-      }
-
-
-      resources {
-        cpu    = 200
-        memory = 512
-      }
-    }
-  }  
-
 group "jmeter_loadtest" {
     count = 10
 

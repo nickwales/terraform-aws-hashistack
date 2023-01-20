@@ -30,8 +30,7 @@ group "jmeter_loadtest" {
             "-Jthreads", "100",
             "-Jramp", "5",
             "-Jkey1", "/v1/kv/loadtest/1?stale",
-            "-Jkey2", "/v1/kv/loadtest/2?stale",
-            "-JconsistencyMode", ""
+            "-Jkey2", "/v1/kv/loadtest/2?stale"
         ]
       }
 
@@ -74,7 +73,7 @@ group "jmeter_loadtest" {
           <stringProp name="HTTPSampler.port">8500</stringProp>
           <stringProp name="HTTPSampler.protocol">http</stringProp>
           <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-          <stringProp name="HTTPSampler.path">$${__P(key1)}$${__P(consistencyMode)}</stringProp>
+          <stringProp name="HTTPSampler.path">$${__P(key1)}</stringProp>
           <stringProp name="HTTPSampler.concurrentPool">6</stringProp>
           <stringProp name="HTTPSampler.connect_timeout"></stringProp>
           <stringProp name="HTTPSampler.response_timeout"></stringProp>
@@ -95,7 +94,7 @@ group "jmeter_loadtest" {
           <stringProp name="HTTPSampler.port">8500</stringProp>
           <stringProp name="HTTPSampler.protocol">http</stringProp>
           <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-          <stringProp name="HTTPSampler.path">$${__P(key1)}$${__P(consistencyMode)}</stringProp>
+          <stringProp name="HTTPSampler.path">$${__P(key1)}</stringProp>
           <stringProp name="HTTPSampler.method">GET</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -114,7 +113,7 @@ group "jmeter_loadtest" {
           <stringProp name="HTTPSampler.port">8500</stringProp>
           <stringProp name="HTTPSampler.protocol">http</stringProp>
           <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-          <stringProp name="HTTPSampler.path">$${__P(key2)}$${__P(consistencyMode)}</stringProp>
+          <stringProp name="HTTPSampler.path">$${__P(key2)}</stringProp>
           <stringProp name="HTTPSampler.method">GET</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <boolProp name="HTTPSampler.auto_redirects">false</boolProp>

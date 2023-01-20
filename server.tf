@@ -44,7 +44,7 @@ resource "aws_autoscaling_group" "consul" {
 resource "aws_launch_configuration" "consul" {
   iam_instance_profile = aws_iam_instance_profile.consul.name
   image_id             = data.aws_ami.ubuntu.id
-  instance_type        = "m5.large"
+  instance_type        = "m4.2xlarge"
   name_prefix          = "consul"
   security_groups      = [aws_security_group.consul.id]
   user_data            = templatefile("${path.module}/templates/userdata_server.sh.tftpl", { })

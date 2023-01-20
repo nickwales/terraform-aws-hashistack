@@ -2,7 +2,7 @@ resource "aws_autoscaling_group" "consul_client" {
   name_prefix          = "hashistack-client"
   max_size                  = 20
   min_size                  = 1
-  desired_capacity          = 1
+  desired_capacity          = 10
   health_check_grace_period = 300
   health_check_type         = "EC2"
   force_delete              = true

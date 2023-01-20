@@ -46,7 +46,7 @@ job "prometheus" {
         image = "prom/prometheus:v2.30.2"
         args = [
           "--config.file=/etc/prometheus/config/prometheus.yml",
-          "--storage.tsdb.path=/prometheus/data",
+          "--storage.tsdb.path=/alloc/data/",
           "--web.listen-address=0.0.0.0:9090",
           "--web.external-url=/prometheus/",
           "--web.console.libraries=/usr/share/prometheus/console_libraries",

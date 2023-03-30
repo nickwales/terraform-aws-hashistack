@@ -1,5 +1,5 @@
-resource "aws_lb" "consul" {
-  name               = "consul"
+resource "aws_lb" "hashistack" {
+  name               = "hashistack"
   internal           = false
   load_balancer_type = "network"
   subnets            = module.vpc.public_subnets
@@ -8,7 +8,7 @@ resource "aws_lb" "consul" {
 }
 
 resource "aws_lb_listener" "consul" {
-  load_balancer_arn = aws_lb.consul.arn
+  load_balancer_arn = aws_lb.hashistack.arn
   port              = "8500"
   protocol          = "TCP"
 
@@ -26,7 +26,7 @@ resource "aws_lb_target_group" "consul" {
 }
 
 resource "aws_lb_listener" "nomad" {
-  load_balancer_arn = aws_lb.consul.arn
+  load_balancer_arn = aws_lb.hashistack.arn
   port              = "4646"
   protocol          = "TCP"
 
@@ -44,7 +44,7 @@ resource "aws_lb_target_group" "nomad" {
 }
 
 resource "aws_lb_listener" "prometheus" {
-  load_balancer_arn = aws_lb.consul.arn
+  load_balancer_arn = aws_lb.hashistack.arn
   port              = "9090"
   protocol          = "TCP"
 
@@ -62,7 +62,7 @@ resource "aws_lb_target_group" "prometheus" {
 }
 
 resource "aws_lb_listener" "grafana" {
-  load_balancer_arn = aws_lb.consul.arn
+  load_balancer_arn = aws_lb.hashistack.arn
   port              = "3000"
   protocol          = "TCP"
 
